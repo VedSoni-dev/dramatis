@@ -126,63 +126,78 @@ function NewCharacter() {
   return (
     <div className="min-h-dvh">
       <AppHeader left={<Wordmark />} />
-      <main className="mx-auto w-full max-w-3xl px-4 pb-28 pt-8 sm:px-8 sm:pt-12">
-        <h1 className="text-4xl leading-[1.05] sm:text-5xl">{title}</h1>
-        {source === "shared" && <p className="mt-3 text-muted">Check them over, then save to add them to your cast in this browser.</p>}
-
-        {(source === "new") && (
-          <section className="mt-8 rounded-[var(--radius)] border border-line bg-card p-4 sm:p-5">
-            <form className="flex flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); void draft(); }}>
-              <label className="sr-only" htmlFor="idea">Describe them in one line</label>
-              <input id="idea" className="fd-input flex-1" value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="Describe them in one line" maxLength={500} autoComplete="off" />
-              {ai.busy
-                ? <button type="button" className="sk-btn sk-btn-quiet" onClick={ai.stop}>Stop</button>
-                : <button type="submit" className="sk-btn">Write it for me</button>}
-            </form>
-            {ai.busy && !spec.name && <p className="mt-3 flex items-center gap-2 text-sm text-muted"><span className="typing" aria-hidden><i /><i /><i /></span>Writing your character…</p>}
-            {errors.draft && <p className="sk-error mt-3" role="alert">{errors.draft}</p>}
-            {ai.error && <p className="sk-error mt-3" role="alert">{ai.error.message}{ai.error.action && <> <a href={ai.error.action.url} target="_blank" rel="noopener noreferrer">{ai.error.action.label} ↗</a></>}</p>}
-          </section>
-        )}
-
-        <form ref={formRef} className="mt-8 grid gap-6" onSubmit={(e) => { e.preventDefault(); save(); }}>
-          <div className="flex items-center gap-4">
-            <Portrait c={{ name: spec.name || "?", avatar }} size={76} live={ai.busy} />
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="sk-btn sk-btn-quiet cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
-                {avatar ? "Change picture" : "Add a picture"}
-                <input type="file" accept="image/*" className="sr-only" onChange={(e) => void pickImage(e.target.files?.[0])} />
-              </label>
-              {avatar && <button type="button" className="sk-btn sk-btn-quiet" onClick={() => setAvatar(undefined)}>Remove</button>}
+      <main className="wrap pb-28 pt-10 sm:pt-14">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
+          <aside className="lg:col-span-4">
+            <div className="lg:sticky lg:top-28">
+              <div className="flex items-center gap-5 lg:block">
+                <div className="w-28 flex-none sm:w-36 lg:w-full lg:max-w-[22rem]">
+                  <div className="cast-card__media"><Portrait c={{ id: source === "edit" && editId ? editId : undefined, name: spec.name, avatar }} size="fill" live={ai.busy} /></div>
+                </div>
+                <div className="min-w-0 lg:mt-5">
+                  <p className="truncate font-display text-[1.5rem] leading-tight tracking-[-0.02em]">{spec.name || "Their name"}</p>
+                  <p className="mt-1 line-clamp-2 text-[.92rem] text-muted">{spec.tagline || "Who they are, in one line"}</p>
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
+                    <label className="sk-btn sk-btn-quiet cursor-pointer focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
+                      {avatar ? "Change picture" : "Add a picture"}
+                      <input type="file" accept="image/*" className="sr-only" onChange={(e) => void pickImage(e.target.files?.[0])} />
+                    </label>
+                    {avatar && <button type="button" className="sk-btn sk-btn-quiet" onClick={() => setAvatar(undefined)}>Remove</button>}
+                  </div>
+                  {errors.avatar && <p className="sk-error mt-3" role="alert">{errors.avatar}</p>}
+                </div>
+              </div>
             </div>
-          </div>
-          {errors.avatar && <p className="sk-error" role="alert">{errors.avatar}</p>}
+          </aside>
 
-          <label className="fd">
-            <span>Name</span>
-            <input className={`fd-input ${filling === "name" ? "is-filling" : ""}`} value={spec.name} onChange={set("name")} maxLength={LIMITS.name} placeholder="Captain Juno Rask" aria-invalid={!!errors.name} />
-            {errors.name && <em className="sk-error not-italic" role="alert">{errors.name}</em>}
-          </label>
-          <label className="fd">
-            <span>Who they are, in one line</span>
-            <input className={`fd-input ${filling === "tagline" ? "is-filling" : ""}`} value={spec.tagline} onChange={set("tagline")} maxLength={LIMITS.tagline} placeholder="Captain of a battered cargo ship" />
-          </label>
-          <label className="fd">
-            <span>Their first message</span>
-            <textarea rows={3} className={`fd-input ${filling === "greeting" ? "is-filling" : ""}`} value={spec.greeting} onChange={set("greeting")} maxLength={LIMITS.greeting} placeholder="*The airlock hisses shut.* So you're the replacement." />
-            <span className="fd-hint">Put actions between asterisks, like *waves*.</span>
-          </label>
-          <label className="fd">
-            <span>How they think and talk</span>
-            <textarea rows={8} className={`fd-input ${filling === "persona" ? "is-filling" : ""}`} value={spec.persona} onChange={set("persona")} maxLength={LIMITS.persona} placeholder="You are… what they want, how they talk, what they'd never do." />
-          </label>
+          <div className="lg:col-span-8">
+            <h1 className="text-4xl leading-[1.05] sm:text-[3.25rem]">{title}</h1>
+            {source === "shared" && <p className="mt-3 text-muted">Check them over, then save to add them to your cast in this browser.</p>}
+            {source === "new" && <p className="mt-3 max-w-xl text-muted">Describe them in one line and Dramatis fills in the form, or write it yourself. Their face comes from their name until you add a picture.</p>}
 
-          {errors.save && <p className="sk-error" role="alert">{errors.save}</p>}
-          <div className="scrim-b sticky bottom-0 -mx-4 flex flex-wrap items-center justify-end gap-2 px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-6 sm:-mx-8 sm:px-8">
-            <Link href="/app" className="sk-btn sk-btn-quiet">Cancel</Link>
-            <button type="submit" className="sk-btn" disabled={ai.busy}>{source === "edit" ? "Save changes" : "Save and start chatting"}</button>
+            {(source === "new") && (
+              <section className="mt-8">
+                <form className="idea-field" onSubmit={(e) => { e.preventDefault(); void draft(); }}>
+                  <label className="sr-only" htmlFor="idea">Describe them in one line</label>
+                  <input id="idea" value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="Describe them in one line" maxLength={500} autoComplete="off" />
+                  {ai.busy
+                    ? <button type="button" className="sk-btn sk-btn-quiet" onClick={ai.stop}>Stop</button>
+                    : <button type="submit" className="sk-btn">Write it for me</button>}
+                </form>
+                {ai.busy && !spec.name && <p className="mt-3 flex items-center gap-2 pl-5 text-sm text-muted"><span className="typing" aria-hidden><i /><i /><i /></span>Writing your character…</p>}
+                {errors.draft && <p className="sk-error mt-3" role="alert">{errors.draft}</p>}
+                {ai.error && <p className="sk-error mt-3" role="alert">{ai.error.message}{ai.error.action && <> <a href={ai.error.action.url} target="_blank" rel="noopener noreferrer">{ai.error.action.label} ↗</a></>}</p>}
+              </section>
+            )}
+
+            <form ref={formRef} className="mt-10 grid gap-6" onSubmit={(e) => { e.preventDefault(); save(); }}>
+              <label className="fd">
+                <span>Name</span>
+                <input className={`fd-input ${filling === "name" ? "is-filling" : ""}`} value={spec.name} onChange={set("name")} maxLength={LIMITS.name} placeholder="Captain Juno Rask" aria-invalid={!!errors.name} />
+                {errors.name && <em className="sk-error not-italic" role="alert">{errors.name}</em>}
+              </label>
+              <label className="fd">
+                <span>Who they are, in one line</span>
+                <input className={`fd-input ${filling === "tagline" ? "is-filling" : ""}`} value={spec.tagline} onChange={set("tagline")} maxLength={LIMITS.tagline} placeholder="Captain of a battered cargo ship" />
+              </label>
+              <label className="fd">
+                <span>Their first message</span>
+                <textarea rows={3} className={`fd-input ${filling === "greeting" ? "is-filling" : ""}`} value={spec.greeting} onChange={set("greeting")} maxLength={LIMITS.greeting} placeholder="*The airlock hisses shut.* So you're the replacement." />
+                <span className="fd-hint">Put actions between asterisks, like *waves*.</span>
+              </label>
+              <label className="fd">
+                <span>How they think and talk</span>
+                <textarea rows={8} className={`fd-input ${filling === "persona" ? "is-filling" : ""}`} value={spec.persona} onChange={set("persona")} maxLength={LIMITS.persona} placeholder="You are… what they want, how they talk, what they'd never do." />
+              </label>
+
+              {errors.save && <p className="sk-error" role="alert">{errors.save}</p>}
+              <div className="scrim-b sticky bottom-0 flex flex-wrap items-center justify-end gap-2 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-6">
+                <Link href="/app" className="sk-btn sk-btn-quiet">Cancel</Link>
+                <button type="submit" className="sk-btn" disabled={ai.busy}>{source === "edit" ? "Save changes" : "Save and start chatting"}</button>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </main>
     </div>
   );

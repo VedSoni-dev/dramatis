@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
+import { ChatList } from "@/components/ChatList";
 import { Cluster } from "@/components/Cluster";
 import { CharLine, UserLine } from "@/components/Lines";
 import { useAI, useStudio } from "@/kit/react/studio";
 import { anticipate } from "@/kit/ui/motion";
-import { deleteGroup, findGroup, groupChatFor, listNames, membersOf, shortName, uid, useStore, writeChat } from "@/lib/store";
+import { deleteGroup, findGroup, groupChatFor, listNames, membersOf, shortName, uid, useStore, writeChat, type State } from "@/lib/store";
 import { textOf, type Character, type Chat, type Group, type Message } from "@/lib/types";
 
 const STARTERS = ["Introduce yourselves.", "Settle this: is pineapple on pizza okay?", "Plan my weekend for me."];
@@ -23,13 +24,13 @@ const unsign = (t: string, name: string) =>
 export default function GroupPage() {
   const { id } = useParams<{ id: string }>();
   const s = useStore();
-  if (!s) return <div className="min-h-dvh"><AppHeader /></div>;
+  if (!s) return <div className="min-h-dvh"><AppHeader wide /></div>;
   const g = findGroup(s, decodeURIComponent(id));
   const members = g ? membersOf(s, g) : [];
   if (!g || members.length < 2) {
     return (
       <div className="min-h-dvh">
-        <AppHeader />
+        <AppHeader wide />
         <main className="mx-auto grid max-w-xl gap-4 px-4 py-24 text-center">
           <h1 className="text-3xl">{g ? "This group needs more characters" : "That group chat isn't in this browser"}</h1>
           <p className="text-muted">{g ? "Some of its characters were deleted. Start a new group with at least two." : "Group chats are saved on the device you made them on."}</p>
@@ -38,10 +39,10 @@ export default function GroupPage() {
       </div>
     );
   }
-  return <GroupView key={g.id} g={g} members={members} chat={groupChatFor(s, g)} />;
+  return <GroupView key={g.id} g={g} members={members} chat={groupChatFor(s, g)} s={s} />;
 }
 
-function GroupView({ g, members, chat }: { g: Group; members: Character[]; chat: Chat }) {
+function GroupView({ g, members, chat, s }: { g: Group; members: Character[]; chat: Chat; s: State }) {
   const ai = useAI("/api/group");
   const studio = useStudio();
   const router = useRouter();
@@ -152,12 +153,17 @@ function GroupView({ g, members, chat }: { g: Group; members: Character[]; chat:
   return (
     <div className="flex min-h-dvh flex-col">
       <AppHeader
+        wide
         left={
           <>
-            <Link href="/app" aria-label="Back to the cast" className="sk-icon-btn -ml-2 flex-none text-fg">
-              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </Link>
-            <Cluster members={members} size={30} live={speaking} />
+            <span className="-ml-2 flex-none lg:hidden">
+              <Link href="/app" aria-label="Back to the cast" className="sk-icon-btn text-fg">
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </Link>
+            </span>
+            <Link href="/app" className="hidden pr-3 font-display text-[1.25rem] tracking-[-0.03em] lg:block">Dramatis</Link>
+            <span className="mr-2 hidden h-6 w-px bg-line lg:block" aria-hidden />
+            <Cluster members={members} size={32} live={speaking} />
             <div className="ml-1 min-w-0 leading-tight">
               <p className="truncate font-medium">{g.name}</p>
               <p className="hidden truncate text-xs text-muted sm:block">{talking ? `${talking.name} is talking…` : `${members.length} characters · they hear each other`}</p>
@@ -181,20 +187,22 @@ function GroupView({ g, members, chat }: { g: Group; members: Character[]; chat:
       />
       {menu && <button type="button" aria-hidden tabIndex={-1} className="fixed inset-0 z-10 cursor-default" onClick={() => setMenu(false)} />}
 
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 sm:px-6">
-        <div className="flex-1 space-y-7 pb-6 pt-8" aria-live="polite" aria-busy={busy}>
+      <div className="flex flex-1">
+      <ChatList s={s} current={`group:${g.id}`} />
+      <main className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 sm:px-6">
+        <div className="flex flex-col items-center pt-10 text-center sm:pt-14">
+          <Cluster members={members} size={88} live={speaking} />
+          <h1 className="mt-5 text-[1.75rem] leading-tight">{g.name}</h1>
+          <p className="mt-1.5 max-w-md text-[.95rem] text-muted">{msgs.length ? "Everyone answers in turn and hears the others. Keep going lets them talk on without you." : `Say something and ${names} each answer. They hear each other, so expect opinions.`}</p>
           {msgs.length === 0 && !busy && (
-            <div className="sk-stagger grid justify-items-center gap-4 pt-10 text-center">
-              <Cluster members={members} size={64} />
-              <h1 className="text-3xl leading-tight sm:text-4xl">{g.name}</h1>
-              <p className="max-w-md text-muted">Say something and {names} each answer. They hear each other, so expect opinions.</p>
-              <div className="mt-2 flex flex-wrap justify-center gap-2">
-                {STARTERS.map((t) => (
-                  <button key={t} type="button" onClick={() => void send(t)} className="min-h-11 rounded-full border border-line px-4 text-sm text-muted transition-colors duration-150 hover:border-fg/25 hover:text-fg">{t}</button>
-                ))}
-              </div>
+            <div className="sk-stagger mt-6 flex flex-wrap justify-center gap-2">
+              {STARTERS.map((t) => (
+                <button key={t} type="button" onClick={() => void send(t)} className="min-h-11 rounded-full border border-line px-4 text-sm text-muted transition-colors duration-150 hover:border-[var(--line-strong)] hover:text-fg">{t}</button>
+              ))}
             </div>
           )}
+        </div>
+        <div className="flex-1 space-y-7 pb-6 pt-10" aria-live="polite" aria-busy={busy}>
           {msgs.map((m, i) => {
             const isLast = i === msgs.length - 1;
             if (m.role === "user") return <UserLine key={m.id} text={textOf(m)} />;
@@ -211,11 +219,11 @@ function GroupView({ g, members, chat }: { g: Group; members: Character[]; chat:
                         <button type="button" className="sk-icon-btn text-base" aria-label="Next take" disabled={m.take === m.takes.length - 1} onClick={() => flip(1)}>›</button>
                       </>
                     )}
-                    <button type="button" className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-fg/80 transition-colors duration-150 hover:bg-bg-2 hover:text-fg" onClick={retake}>
+                    <button type="button" className="ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] px-4 text-[#9fd5fd] transition-colors duration-150 hover:bg-[color-mix(in_oklab,var(--accent)_20%,transparent)]" onClick={retake}>
                       <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden><path d="M4 12a8 8 0 0 1 14-5.3M20 4v5h-5M20 12a8 8 0 0 1-14 5.3M4 20v-5h5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       Another take
                     </button>
-                    <button type="button" className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-fg/80 transition-colors duration-150 hover:bg-bg-2 hover:text-fg" onClick={keepGoing}>
+                    <button type="button" className="inline-flex min-h-11 items-center gap-1.5 rounded-full border border-[var(--line-strong)] px-4 text-fg/85 transition-colors duration-150 hover:bg-bg-2 hover:text-fg" onClick={keepGoing}>
                       <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
                       Keep going
                     </button>
@@ -232,7 +240,7 @@ function GroupView({ g, members, chat }: { g: Group; members: Character[]; chat:
         </div>
 
         <form className="scrim-b sticky bottom-0 pb-[calc(.75rem+env(safe-area-inset-bottom))] pt-4" onSubmit={(e) => { e.preventDefault(); void send(); }}>
-          <div className="flex items-end gap-2 rounded-[22px] border border-line bg-card p-1.5 pl-4 transition-[border-color] duration-150 focus-within:border-accent/70 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
+          <div className="flex items-end gap-2 rounded-[28px] border border-[var(--line-strong)] bg-card p-1.5 pl-5 transition-[border-color,box-shadow] duration-150 focus-within:border-accent focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--accent)_24%,transparent)]">
             <label htmlFor="msg" className="sr-only">Message the group</label>
             <textarea id="msg" ref={box} rows={1} value={input} onChange={(e) => setInput(e.target.value)} placeholder={`Message ${names}`}
               onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer: coarse)").matches) { e.preventDefault(); void send(); } }}
@@ -246,6 +254,7 @@ function GroupView({ g, members, chat }: { g: Group; members: Character[]; chat:
           <p className="mt-2 text-center text-[.75rem] text-muted">{names} are AI characters. Treat what they say as fiction.</p>
         </form>
       </main>
+      </div>
     </div>
   );
 }

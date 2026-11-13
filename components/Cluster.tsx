@@ -6,7 +6,7 @@ export function Cluster({ members, size = 36, live }: { members: Character[]; si
   return (
     <span className="flex flex-none items-center" aria-hidden>
       {members.slice(0, 4).map((c, i) => (
-        <span key={c.id} className="rounded-[30%] ring-2 ring-bg" style={{ marginLeft: i ? -size * 0.32 : 0, zIndex: 10 - i }}>
+        <span key={c.id} className={`rounded-[30%] ring-bg ${size >= 64 ? "ring-[3px]" : "ring-2"}`} style={{ marginLeft: i ? -size * 0.32 : 0, zIndex: 10 - i }}>
           <Portrait c={c} size={size} live={live === c.id} />
         </span>
       ))}
