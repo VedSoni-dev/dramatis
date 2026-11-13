@@ -93,7 +93,7 @@ function CastCard({ c }: { c: Character }) {
         <h3 className="min-w-0 truncate text-[1.1rem] font-medium leading-tight tracking-[-0.01em] sm:text-[1.2rem]">{c.name}</h3>
         <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden className="cast-card__go flex-none text-muted"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </div>
-      <p className="mt-1.5 line-clamp-2 text-[.92rem] leading-snug text-muted sm:text-[.98rem]">{c.tagline}</p>
+      <p className="mt-1.5 line-clamp-2 text-[.92rem] leading-snug text-muted sm:text-[.98rem]">{c.tagline.replace(/(\d)-/g, "$1\u2011")}</p>
     </Link>
   );
 }

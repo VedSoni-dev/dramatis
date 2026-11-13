@@ -132,6 +132,12 @@ textarea.fd-input { resize: vertical; }
 .idea-field:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 24%, transparent); }
 .idea-field input { flex: 1 1 auto; min-width: 0; min-height: 44px; border: 0; background: transparent; color: var(--fg); font: 1.05rem var(--font-body); outline: none; }
 .idea-field input::placeholder { color: var(--muted); }
+/* a phone: the line on top, the button under it, both full width */
+@media (max-width: 639px) {
+  .idea-field { flex-wrap: wrap; border-radius: 24px; padding: .5rem; }
+  .idea-field input { flex-basis: 100%; padding: 0 .75rem; }
+  .idea-field .sk-btn { width: 100%; }
+}
 
 /* the menu in the chat header */
 .menu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 13rem; padding: .35rem; border-radius: 18px; border: 1px solid var(--line-strong); background: #111620; box-shadow: var(--shadow-3); z-index: 30; }

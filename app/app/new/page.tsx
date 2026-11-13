@@ -127,7 +127,7 @@ function NewCharacter() {
     <div className="min-h-dvh">
       <AppHeader left={<Wordmark />} />
       <main className="wrap pb-28 pt-10 sm:pt-14">
-        <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
           <aside className="lg:col-span-4">
             <div className="lg:sticky lg:top-28">
               <div className="flex items-center gap-5 lg:block">

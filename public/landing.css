@@ -51,7 +51,7 @@
 @media (max-width: 1023px) { .hero__art > .ly-piece--note { left: var(--s-4); bottom: var(--s-4); width: 270px; } }
 .hero__proof { font-size: var(--t-small); color: color-mix(in oklab, var(--ink) 78%, var(--bg)); }
 /* the dark pill look's secondary button: an ink outline, so it never reads as switched off on the night ground */
-.btn.btn--secondary { box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--ink) 30%, transparent); }
+.btn.btn--secondary { border: 1px solid color-mix(in oklab, var(--ink) 34%, transparent); }
 /* the hero frame's pause disc sits over the dark window on a light frame: a ring that shows on both */
 .hero__art button.loop-pause:focus-visible { outline: 2px solid #0a0d14; outline-offset: 2px; box-shadow: 0 0 0 6px #e9edf3; }
 @media (max-width: 1279px) { .dr-pill { display: none; } }
@@ -181,10 +181,24 @@
 @media (max-width: 639px) {
   #cast .dr-tile > p { font-size: var(--t-small); }
   #cast .dr-tile { gap: var(--s-3); }
-  #power .dr-frame { display: none; }
+  #power .dr-facts__more { display: none; }
   .closing__links .footer__lede { display: none; }
 }
 @media (max-width: 639px) {
   #cast .dr-tile > p { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
-  #questions { --hm: 2; }
+  /* a phone keeps the questions to one screen: three answers in their natural flow (the share link waits for a wider screen) */
+  #questions .dr-faq { justify-content: flex-start; }
+  #questions .dr-faq > .faq__item:nth-child(3) { display: none; }
+  /* the picker's frame takes what the words leave, down to a strip, so it never runs out of its section */
+  #power .dr-frame { min-height: 96px; }
 }
+/* the creator's frame stretches with its column when the split stacks */
+#make .dr-frame { align-self: stretch; }
+/* below 1024 the picker is cut by the frame's foot: it fades there */
+@media (max-width: 1023px) { #power .stage { -webkit-mask: linear-gradient(to bottom, #000 calc(100% - 64px), transparent calc(100% - 4px)); mask: linear-gradient(to bottom, #000 calc(100% - 64px), transparent calc(100% - 4px)); } }
+/* below 1024 the questions run down the section too: the heading and faces, then the answers spread to its foot */
+@media (max-width: 1023px) {
+  #questions .grid.fill { display: flex; flex-direction: column; gap: var(--s-7); }
+  #questions .dr-faq { flex: 1 1 auto; display: flex; flex-direction: column; justify-content: space-between; }
+}
+@media (max-width: 639px) { #cast .dr-shelf { margin-bottom: var(--s-2); } }

@@ -44,7 +44,7 @@ function tile(id: string): string {
 function menuCard(id: string): string {
   const c = byId(id);
   return `<a class="menu-card span-3" href="/app/chat/${c.id}">
-              <div class="panel"><img class="frame__img" src="/portraits/${c.id}.svg" alt="" data-source="client" data-subject="${esc(c.name)}"></div>
+              <div class="panel"><img class="frame__img" src="/portraits/${c.id}.svg" alt="" width="320" height="320" loading="lazy" data-source="client" data-subject="${esc(c.name)}"></div>
               <span class="t-card">${esc(c.name)}</span>
               <span class="t-small muted">${esc(SHORT[c.id] ?? c.tagline)}</span>
             </a>`;
@@ -164,7 +164,7 @@ export function landingHTML(): string {
            data-fx-palette='{"bg":"#c6d3df","surface":"#d6e0e9","ink":"#25303a","accent":"#3f6a92"}'
            data-fx-params='{"speed":0,"ribWidth":30,"distortion":0.55,"highlight":0.12,"shadow":0.14,"calm":0.5,"calmX":0.55,"calmY":0.55}'
            role="img" aria-label="Dramatis open on a chat with Odile, the laundromat ghost, with a second take of her reply, and a new character written from one line">
-        <div class="ly-piece ly-piece--main ui ui-chatwin dr-win" aria-hidden="true">
+        <div class="ly-piece ly-piece--main dr-win" role="img" aria-hidden="true">
           <div class="dr-win__head">${face("odile")}<div class="dr-win__who"><b>${esc(odile.name)}</b><span>${esc(odile.tagline)}</span></div><span class="dr-pill"><i></i>Claude API key</span></div>
           <div class="dr-chat">
             <div class="dr-line">${face("odile")}<div><div class="dr-name">Odile</div><div class="dr-text">${said("*The dryer in the corner stops on its own.* Oh! Forgive me, I didn't hear you come in. Hardly anyone sees me before three in the morning.")}</div></div></div>
@@ -226,8 +226,6 @@ export function landingHTML(): string {
               <div class="ui ui-writer dr-writer" role="img" aria-label="The character writer filling in Hazel Moorcroft, a retired lighthouse keeper who writes terrible poetry, from one line">
                 <div class="dr-writer__idea"><span>“a retired lighthouse keeper who writes terrible poetry”</span><i><span class="dr-writer__dot"></span>Writing</i></div>
                 <div class="dr-writer__who">${face("hazel", "Hazel Moorcroft")}<div><b>Hazel Moorcroft</b><span>Kept the Kettle Point light for forty years. Now she rhymes.</span></div></div>
-                <div class="dr-writer__field"><span>Name</span><div>Hazel Moorcroft</div></div>
-                <div class="dr-writer__field"><span>Who they are, in one line</span><div>Kept the Kettle Point light for forty years. Now she rhymes.</div></div>
                 <div class="dr-writer__field is-filling"><span>Their first message</span><div>${said("*She unfolds a damp page and clears her throat.* An ode to fog, in eleven verses. Do sit")}<b class="dr-caret"></b></div></div>
                 <div class="dr-writer__field"><span>How they think and talk</span><div class="dr-writer__empty"></div></div>
               </div>
@@ -249,7 +247,7 @@ export function landingHTML(): string {
       </div>
       <div class="ui app fill dr-app" role="img" aria-label="The Dramatis app: a list of chats beside an open chat with Inès Calder, the noir detective, on her second take" data-ui-pause-host>
         <div class="app__pane app__pane--list">
-          <div class="ui ui-chatlist dr-list">
+          <div class="dr-list" role="img" aria-hidden="true">
             <div class="dr-list__head"><b>Chats</b><span>9</span></div>
             ${row("ines-calder", "A fridge job. Here's what we've got.", "now", true)}
             ${row("marta", "Pequeña corrección: un café, not una café.", "1h")}
@@ -263,7 +261,7 @@ export function landingHTML(): string {
           </div>
         </div>
         <div class="app__pane app__pane--open">
-          <div class="ui ui-chatopen dr-open" data-ly-steps="700">
+          <div class="dr-open" role="img" aria-hidden="true" data-ly-steps="700">
             <div class="dr-win__head">${face("ines-calder")}<div class="dr-win__who"><b>${esc(ines.name)}</b><span>${esc(ines.tagline)}</span></div><span class="dr-dots" aria-hidden="true"><i></i><i></i><i></i></span></div>
             <div class="dr-intro">${face("ines-calder")}<b>${esc(ines.name)}</b><span>${esc(ines.tagline)}</span></div>
             <div class="dr-chat">
@@ -283,11 +281,11 @@ export function landingHTML(): string {
       <div class="grid fill">
         <div class="span-5 stack-6">
           <h2 id="power-h">Runs on your own AI</h2>
-          <p class="t-lead">No account and no subscription to Dramatis. On this site, paste a Claude or OpenAI API key, or sign in with publik and use your plan.</p>
+          <p class="t-lead">Dramatis charges nothing itself. On this site, paste a Claude or OpenAI API key, or sign in with publik and use your plan.</p>
           <div class="dr-facts">
             <p>Your key is kept in an encrypted cookie on this browser.</p>
             <p>A local model or your ChatGPT plan works when Dramatis runs on your computer.</p>
-            <p>Switch at any time with the AI button at the top of the app.</p>
+            <p class="dr-facts__more">Switch at any time with the AI button at the top of the app.</p>
           </div>
           <a class="link" href="${app.repo}#run-it-yourself">See how to run it yourself</a>
         </div>
@@ -315,14 +313,13 @@ export function landingHTML(): string {
       <div class="grid fill">
         <div class="span-5 stack-6">
           <h2 id="questions-h">Questions about Dramatis</h2>
-          <div class="dr-faces"><img src="/portraits/odile.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/brick.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/ines-calder.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/juno-rask.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/marta.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/rhea.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/vera-holt.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/theo.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"></div>
+          <div class="dr-faces"><img src="/portraits/odile-64.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/brick-64.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/ines-calder-64.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/juno-rask-64.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/marta-64.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/rhea-64.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/vera-holt-64.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"><img src="/portraits/theo-64.svg" alt="" width="56" height="56" loading="lazy" data-source="client" data-subject="the Dramatis cast"></div>
         </div>
         <div class="faq dr-faq span-6 start-7">
-          <div class="faq__item"><h3>Is Dramatis free?</h3><p>Yes, and it is MIT licensed. You pay your AI provider for what you use, or nothing with a local model.</p></div>
-          <div class="faq__item"><h3>Where are my characters and chats kept?</h3><p>In this browser, on this device. There is no account, so they do not follow you to another device.</p></div>
-          <div class="faq__item"><h3>How does a character's share link work?</h3><p>The whole character travels inside the link, after the #, so no server ever stores it.</p></div>
-          <div class="faq__item"><h3>Is Dramatis made by Character.AI?</h3><p>No. It is an independent open-source project, inspired by Character.AI and not affiliated with it.</p></div>
-          <div class="faq__item"><h3>What if a chat turns serious?</h3><p>Characters stay in role for the story, and step out of it to answer plainly when someone is really at risk.</p></div>
+          <div class="faq__item"><h3>Is the Dramatis app free?</h3><p>Yes, and MIT licensed. You pay your AI provider for what you use, or nothing with a local model.</p></div>
+          <div class="faq__item"><h3>Where are my characters and chats kept?</h3><p>In this browser only. There is no account, so nothing moves to your other devices.</p></div>
+          <div class="faq__item"><h3>How does a character's share link work?</h3><p>The whole character rides inside the link, after the #, so no server stores it.</p></div>
+          <div class="faq__item"><h3>What if a chat turns serious?</h3><p>Characters stay in role for the story, and step out of it to answer plainly when someone is at risk.</p></div>
         </div>
       </div>
     </div>
@@ -334,7 +331,7 @@ export function landingHTML(): string {
     <div class="closing__cta close--type">
       <div class="section-head">
         <h2 id="close-h">Start a chat with Odile, Brick or Theo</h2>
-        <p>Free in your browser, with no account. Your chats stay on your device.</p>
+        <p>Free in your browser. Your characters and chats stay on your device.</p>
       </div>
       <a class="btn btn--primary btn--xl btn--wide" href="/app">Start a chat${ARROW}</a>
     </div>

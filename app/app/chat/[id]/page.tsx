@@ -148,9 +148,11 @@ function ChatView({ c, chat, s }: { c: Character; chat: Chat; s: State }) {
         wide
         left={
           <>
-            <Link href="/app" aria-label="Back to the cast" className="sk-icon-btn -ml-2 flex-none text-fg lg:hidden">
-              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </Link>
+            <span className="-ml-2 flex-none lg:hidden">
+              <Link href="/app" aria-label="Back to the cast" className="sk-icon-btn text-fg">
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </Link>
+            </span>
             <Link href="/app" className="hidden pr-3 font-display text-[1.25rem] tracking-[-0.03em] lg:block">Dramatis</Link>
             <span className="hidden h-6 w-px bg-line lg:block" aria-hidden />
             <Portrait c={c} size={36} live={ai.busy} className="lg:ml-2" />
