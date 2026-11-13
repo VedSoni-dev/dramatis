@@ -7,7 +7,7 @@ import { AppHeader, Wordmark } from "@/components/AppHeader";
 import { Cluster } from "@/components/Cluster";
 import { Portrait } from "@/components/Portrait";
 import { shake } from "@/kit/ui/motion";
-import { allCharacters, listNames, saveGroup, uid, useStore } from "@/lib/store";
+import { allCharacters, listNames, saveGroup, shortName, uid, useStore } from "@/lib/store";
 import { GROUP_MAX, GROUP_MIN } from "@/lib/types";
 
 export default function NewGroup() {
@@ -20,7 +20,7 @@ export default function NewGroup() {
 
   const all = s ? allCharacters(s) : [];
   const chosen = picked.map((id) => all.find((c) => c.id === id)).filter((c) => !!c);
-  const fallbackName = listNames(chosen.map((c) => c.name.split(" ")[0]!));
+  const fallbackName = listNames(chosen.map((c) => shortName(c.name)));
 
   function toggle(id: string) {
     setError(null);

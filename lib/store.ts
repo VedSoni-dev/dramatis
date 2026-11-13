@@ -96,6 +96,10 @@ export const findGroup = (s: State, id: string) => s.groups.find((g) => g.id ===
 /** The members who still exist (a deleted character drops out). */
 export const membersOf = (s: State, g: Group) => g.memberIds.map((id) => findCharacter(s, id)).filter((c): c is Character => !!c);
 export const groupChatFor = (s: State, g: Group): Chat => s.chats[groupKey(g.id)] ?? { characterId: groupKey(g.id), messages: [], updatedAt: 0 };
+/** What to call someone in a list: the first name ("Inès"), unless the first word isn't a name ("His Leather Jacket",
+ *  "Captain Juno Rask", "The Oracle"), then the whole thing. */
+const NOT_A_NAME = /^(his|her|their|its|the|a|an|my|our|captain|capt\.?|dr\.?|sir|lady|lord|mr\.?|mrs\.?|ms\.?|professor|detective|madame)$/i;
+export const shortName = (name: string) => { const w = name.trim().split(/\s+/); return w.length > 1 && !NOT_A_NAME.test(w[0]!) ? w[0]! : name.trim(); };
 /** "Odile, Brick and Theo" */
 export const listNames = (names: string[]) => (names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`);
 

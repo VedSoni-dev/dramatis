@@ -9,7 +9,7 @@ import { Cluster } from "@/components/Cluster";
 import { CharLine, UserLine } from "@/components/Lines";
 import { useAI, useStudio } from "@/kit/react/studio";
 import { anticipate } from "@/kit/ui/motion";
-import { deleteGroup, findGroup, groupChatFor, listNames, membersOf, uid, useStore, writeChat } from "@/lib/store";
+import { deleteGroup, findGroup, groupChatFor, listNames, membersOf, shortName, uid, useStore, writeChat } from "@/lib/store";
 import { textOf, type Character, type Chat, type Group, type Message } from "@/lib/types";
 
 const STARTERS = ["Introduce yourselves.", "Settle this: is pineapple on pizza okay?", "Plan my weekend for me."];
@@ -59,7 +59,7 @@ function GroupView({ g, members, chat }: { g: Group; members: Character[]; chat:
   const msgs = chat.messages;
   const last = msgs[msgs.length - 1];
   const who = (m: Message) => members.find((c) => c.id === m.speakerId) ?? NOBODY;
-  const names = listNames(members.map((c) => c.name.split(" ")[0]!));
+  const names = listNames(members.map((c) => shortName(c.name)));
   const lines = (h: Message[]) => h.map((m) => ({ from: m.role === "user" ? "person" : who(m).name, content: textOf(m) }));
   const busy = ai.busy || !!speaking;
 
