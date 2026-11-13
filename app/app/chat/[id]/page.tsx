@@ -5,23 +5,24 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppHeader, Toast } from "@/components/AppHeader";
-import { Portrait } from "@/components/Portrait";
+import { ChatList } from "@/components/ChatList";
 import { CharLine, UserLine } from "@/components/Lines";
+import { Portrait } from "@/components/Portrait";
 import { useAI, useStudio } from "@/kit/react/studio";
 import { anticipate } from "@/kit/ui/motion";
 import { shareLink } from "@/lib/share";
-import { chatFor, deleteCharacter, findCharacter, resetChat, uid, useStore, writeChat } from "@/lib/store";
+import { chatFor, deleteCharacter, findCharacter, resetChat, uid, useStore, writeChat, type State } from "@/lib/store";
 import { textOf, type Character, type Chat, type Message } from "@/lib/types";
 
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>();
   const s = useStore();
   const c = s ? findCharacter(s, decodeURIComponent(id)) : undefined;
-  if (!s) return <div className="min-h-dvh"><AppHeader /></div>;
+  if (!s) return <div className="min-h-dvh"><AppHeader wide /></div>;
   if (!c) {
     return (
       <div className="min-h-dvh">
-        <AppHeader />
+        <AppHeader wide />
         <main className="mx-auto grid max-w-xl gap-4 px-4 py-24 text-center">
           <h1 className="text-3xl">That character isn&apos;t in this browser</h1>
           <p className="text-muted">Characters you make are saved on the device you made them on. Ask for their share link, or start a new one.</p>
@@ -30,13 +31,13 @@ export default function ChatPage() {
       </div>
     );
   }
-  return <ChatView key={c.id} c={c} chat={chatFor(s, c)} />;
+  return <ChatView key={c.id} c={c} chat={chatFor(s, c)} s={s} />;
 }
 
 const wire = (msgs: Message[]) => msgs.map((m) => ({ role: m.role, content: textOf(m) }));
 const spec = (c: Character) => ({ name: c.name, tagline: c.tagline, greeting: c.greeting, persona: c.persona });
 
-function ChatView({ c, chat }: { c: Character; chat: Chat }) {
+function ChatView({ c, chat, s }: { c: Character; chat: Chat; s: State }) {
   const ai = useAI();
   const studio = useStudio();
   const router = useRouter();
@@ -145,12 +146,17 @@ function ChatView({ c, chat }: { c: Character; chat: Chat }) {
   return (
     <div className="flex min-h-dvh flex-col">
       <AppHeader
+        wide
         left={
           <>
-            <Link href="/app" aria-label="Back to the cast" className="sk-icon-btn -ml-2 flex-none text-fg">
-              <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </Link>
-            <Portrait c={c} size={36} live={ai.busy} />
+            <span className="-ml-2 flex-none lg:hidden">
+              <Link href="/app" aria-label="Back to the cast" className="sk-icon-btn text-fg">
+                <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+              </Link>
+            </span>
+            <Link href="/app" className="hidden pr-3 font-display text-[1.25rem] tracking-[-0.03em] lg:block">Dramatis</Link>
+            <span className="hidden h-6 w-px bg-line lg:block" aria-hidden />
+            <Portrait c={c} size={36} live={ai.busy} className="lg:ml-2" />
             <div className="min-w-0 leading-tight">
               <p className="truncate font-medium">{c.name}</p>
               <p className="hidden truncate text-xs text-muted sm:block">{c.tagline}</p>
@@ -177,55 +183,63 @@ function ChatView({ c, chat }: { c: Character; chat: Chat }) {
       />
       {menu && <button type="button" aria-hidden tabIndex={-1} className="fixed inset-0 z-10 cursor-default" onClick={() => setMenu(false)} />}
 
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 sm:px-6">
-        <div className="flex-1 space-y-7 pb-6 pt-8" aria-live="polite" aria-busy={ai.busy}>
-          {msgs.map((m, i) => {
-            const isLast = i === msgs.length - 1;
-            if (m.role === "user") return <UserLine key={m.id} text={textOf(m)} />;
-            if (isLast && streamingTake) return <CharLine key={m.id} c={c} text={ai.text} live innerRef={lastTake} className="take-in" />;
-            return (
-              <CharLine key={`${m.id}-${m.take}`} c={c} text={textOf(m)} innerRef={isLast ? lastTake : undefined}
-                className={isLast && m.takes.length > 1 ? (dir === "in" ? "take-in" : dir === "back" ? "take-in-back" : "") : ""}>
-                {isLast && canRetake && !ai.busy && (
-                  <div className="mt-3 flex items-center gap-1 text-sm text-muted">
-                    {m.takes.length > 1 && (
-                      <>
-                        <button type="button" className="sk-icon-btn text-base" aria-label="Previous take" disabled={m.take === 0} onClick={() => flip(-1)}>‹</button>
-                        <span key={m.take} className="take-count min-w-[5.5rem] text-center font-mono text-xs">Take {m.take + 1} of {m.takes.length}</span>
-                        <button type="button" className="sk-icon-btn text-base" aria-label="Next take" disabled={m.take === m.takes.length - 1} onClick={() => flip(1)}>›</button>
-                      </>
-                    )}
-                    <button type="button" className="ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-fg/80 transition-colors duration-150 hover:bg-bg-2 hover:text-fg" onClick={retake}>
-                      <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden><path d="M4 12a8 8 0 0 1 14-5.3M20 4v5h-5M20 12a8 8 0 0 1-14 5.3M4 20v-5h5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                      Another take
-                    </button>
-                  </div>
-                )}
-              </CharLine>
-            );
-          })}
-          {streamingNew && <CharLine c={c} text={ai.text} live className="sk-rise" />}
-          {ai.error && !ai.busy && (
-            <p className="sk-error" role="alert">{ai.error.message}{ai.error.action && <> <a href={ai.error.action.url} target="_blank" rel="noopener noreferrer">{ai.error.action.label} ↗</a></>}</p>
-          )}
-          <div ref={end} />
-        </div>
-
-        <form className="scrim-b sticky bottom-0 pb-[calc(.75rem+env(safe-area-inset-bottom))] pt-4" onSubmit={(e) => { e.preventDefault(); void send(); }}>
-          <div className="flex items-end gap-2 rounded-[22px] border border-line bg-card p-1.5 pl-4 transition-[border-color,box-shadow] duration-150 focus-within:border-accent/70 focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent">
-            <label htmlFor="msg" className="sr-only">Message {c.name}</label>
-            <textarea id="msg" ref={box} rows={1} value={input} onChange={(e) => setInput(e.target.value)} placeholder={`Message ${c.name}`}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer: coarse)").matches) { e.preventDefault(); void send(); } }}
-              className="composer-input max-h-[180px] min-h-11 flex-1 resize-none bg-transparent py-2.5 leading-6 outline-none placeholder:text-muted" />
-            {ai.busy
-              ? <button type="button" onClick={ai.stop} aria-label="Stop" className="grid size-11 flex-none place-items-center rounded-full bg-bg-2 text-fg transition-transform duration-100 active:scale-95"><span className="size-3.5 rounded-[3px] bg-fg" /></button>
-              : <button type="submit" aria-label="Send" disabled={!input.trim()} className="grid size-11 flex-none place-items-center rounded-full bg-accent text-accent-fg transition-[transform,opacity] duration-100 active:scale-95 disabled:opacity-40">
-                  <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </button>}
+      <div className="flex flex-1">
+        <ChatList s={s} current={c.id} />
+        <main className="mx-auto flex w-full max-w-[46rem] flex-1 flex-col px-4 sm:px-6">
+          <div className="flex flex-col items-center pt-10 text-center sm:pt-14">
+            <Portrait c={c} size={112} className="intro-face" />
+            <h1 className="mt-4 text-[1.75rem] leading-tight">{c.name}</h1>
+            <p className="mt-1.5 max-w-md text-[.95rem] text-muted">{c.tagline}</p>
           </div>
-          <p className="mt-2 text-center text-[.75rem] text-muted">{c.name} is an AI character. Treat what they say as fiction.</p>
-        </form>
-      </main>
+          <div className="flex-1 space-y-7 pb-6 pt-10" aria-live="polite" aria-busy={ai.busy}>
+            {msgs.map((m, i) => {
+              const isLast = i === msgs.length - 1;
+              if (m.role === "user") return <UserLine key={m.id} text={textOf(m)} />;
+              if (isLast && streamingTake) return <CharLine key={m.id} c={c} text={ai.text} live innerRef={lastTake} className="take-in" />;
+              return (
+                <CharLine key={`${m.id}-${m.take}`} c={c} text={textOf(m)} innerRef={isLast ? lastTake : undefined}
+                  className={isLast && m.takes.length > 1 ? (dir === "in" ? "take-in" : dir === "back" ? "take-in-back" : "") : ""}>
+                  {isLast && canRetake && !ai.busy && (
+                    <div className="mt-3 flex items-center gap-1 text-sm text-muted">
+                      {m.takes.length > 1 && (
+                        <>
+                          <button type="button" className="sk-icon-btn text-base" aria-label="Previous take" disabled={m.take === 0} onClick={() => flip(-1)}>‹</button>
+                          <span key={m.take} className="take-count min-w-[5.5rem] text-center font-mono text-xs">Take {m.take + 1} of {m.takes.length}</span>
+                          <button type="button" className="sk-icon-btn text-base" aria-label="Next take" disabled={m.take === m.takes.length - 1} onClick={() => flip(1)}>›</button>
+                        </>
+                      )}
+                      <button type="button" className="ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--accent)_12%,transparent)] px-4 text-[#9fd5fd] transition-colors duration-150 hover:bg-[color-mix(in_oklab,var(--accent)_20%,transparent)]" onClick={retake}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" aria-hidden><path d="M4 12a8 8 0 0 1 14-5.3M20 4v5h-5M20 12a8 8 0 0 1-14 5.3M4 20v-5h5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        Another take
+                      </button>
+                    </div>
+                  )}
+                </CharLine>
+              );
+            })}
+            {streamingNew && <CharLine c={c} text={ai.text} live className="sk-rise" />}
+            {ai.error && !ai.busy && (
+              <p className="sk-error" role="alert">{ai.error.message}{ai.error.action && <> <a href={ai.error.action.url} target="_blank" rel="noopener noreferrer">{ai.error.action.label} ↗</a></>}</p>
+            )}
+            <div ref={end} />
+          </div>
+
+          <form className="scrim-b sticky bottom-0 pb-[calc(.75rem+env(safe-area-inset-bottom))] pt-4" onSubmit={(e) => { e.preventDefault(); void send(); }}>
+            <div className="flex items-end gap-2 rounded-[28px] border border-[var(--line-strong)] bg-card p-1.5 pl-5 transition-[border-color,box-shadow] duration-150 focus-within:border-accent focus-within:shadow-[0_0_0_3px_color-mix(in_oklab,var(--accent)_24%,transparent)]">
+              <label htmlFor="msg" className="sr-only">Message {c.name}</label>
+              <textarea id="msg" ref={box} rows={1} value={input} onChange={(e) => setInput(e.target.value)} placeholder={`Message ${c.name}`}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && !window.matchMedia("(pointer: coarse)").matches) { e.preventDefault(); void send(); } }}
+                className="composer-input max-h-[180px] min-h-11 flex-1 resize-none bg-transparent py-2.5 leading-6 outline-none placeholder:text-muted" />
+              {ai.busy
+                ? <button type="button" onClick={ai.stop} aria-label="Stop" className="grid size-11 flex-none place-items-center rounded-full bg-bg-2 text-fg transition-transform duration-100 active:scale-95"><span className="size-3.5 rounded-[3px] bg-fg" /></button>
+                : <button type="submit" aria-label="Send" disabled={!input.trim()} className="grid size-11 flex-none place-items-center rounded-full bg-accent text-accent-fg transition-[transform,opacity] duration-100 active:scale-95 disabled:opacity-40">
+                    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path d="M12 19V5M6 11l6-6 6 6" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                  </button>}
+            </div>
+            <p className="mt-2 text-center text-[.75rem] text-muted">{c.name} is an AI character. Treat what they say as fiction.</p>
+          </form>
+        </main>
+      </div>
       {toast && <Toast text={toast} />}
     </div>
   );
