@@ -11,6 +11,7 @@ const ICON: Record<Mode, ReactNode> = {
   local: <svg viewBox="0 0 24 24" aria-hidden><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>,
   chatgpt: <svg viewBox="0 0 24 24" aria-hidden><path d="M12 3a9 9 0 1 0 9 9" /><path d="M12 7v5l3 2" /></svg>,
   claude: <svg viewBox="0 0 24 24" aria-hidden><circle cx="8" cy="15" r="4" /><path d="M11 12l8-8M16 7l2 2M14 9l2 2" /></svg>,
+  openai: <svg viewBox="0 0 24 24" aria-hidden><circle cx="8" cy="15" r="4" /><path d="M11 12l8-8M16 7l2 2M14 9l2 2" /><path d="M8 13.5v3M6.5 15h3" /></svg>,
   publik: <svg viewBox="0 0 24 24" aria-hidden><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18" /></svg>,
 };
 
@@ -109,7 +110,8 @@ function Card({ m, active }: { m: ModeStatus; active: boolean }) {
       </header>
       {m.detail && <p className="sk-detail">{m.detail}</p>}
       <div className="sk-card-body">
-        {m.id === "claude" && <ClaudeBody m={m} />}
+        {m.id === "claude" && <KeyBody m={m} placeholder="sk-ant-…" label="Anthropic API key" getKey="https://console.anthropic.com/settings/keys" save={s.saveClaudeKey} forget={s.forgetClaudeKey} />}
+        {m.id === "openai" && <KeyBody m={m} placeholder="sk-…" label="OpenAI API key" getKey="https://platform.openai.com/api-keys" save={s.saveOpenAIKey} forget={s.forgetOpenAIKey} />}
         {m.id === "chatgpt" && <ChatGPTBody m={m} />}
         {m.id === "local" && <ModelSelect m={m} />}
         {m.id === "publik" && <PublikBody m={m} />}
@@ -131,18 +133,23 @@ function ModelSelect({ m }: { m: ModeStatus }) {
   );
 }
 
-function ClaudeBody({ m }: { m: ModeStatus }) {
-  const s = useStudio();
+/** A bring-your-own-key mode (Claude, OpenAI): paste and check the key; once saved, a model choice (if any) and Remove. */
+function KeyBody({ m, placeholder, label, getKey, save, forget }: { m: ModeStatus; placeholder: string; label: string; getKey: string; save: (key: string) => Promise<boolean>; forget: () => Promise<void> }) {
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
-  if (m.ready && m.detail?.startsWith("Key ending")) {
-    return <button type="button" className="sk-btn sk-btn-quiet" onClick={() => s.forgetClaudeKey()}>Remove key</button>;
+  if (m.ready) {
+    return (
+      <div className="sk-stack">
+        {m.models && m.models.length > 1 && <ModelSelect m={m} />}
+        {m.detail?.startsWith("Key ending") && <button type="button" className="sk-btn sk-btn-quiet" onClick={() => forget()}>Remove key</button>}
+      </div>
+    );
   }
   return (
-    <form className="sk-row" onSubmit={async (e) => { e.preventDefault(); setBusy(true); if (await s.saveClaudeKey(key)) setKey(""); setBusy(false); }}>
-      <input type="password" autoComplete="off" spellCheck={false} placeholder="sk-ant-…" value={key} onChange={(e) => setKey(e.target.value)} aria-label="Anthropic API key" />
+    <form className="sk-row" onSubmit={async (e) => { e.preventDefault(); setBusy(true); if (await save(key)) setKey(""); setBusy(false); }}>
+      <input type="password" autoComplete="off" spellCheck={false} placeholder={placeholder} value={key} onChange={(e) => setKey(e.target.value)} aria-label={label} />
       <button type="submit" className="sk-btn" disabled={busy || key.length < 10}>{busy ? "Checking…" : "Save"}</button>
-      <a className="sk-link" href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener noreferrer">Get a key ↗</a>
+      <a className="sk-link" href={getKey} target="_blank" rel="noopener noreferrer">Get a key ↗</a>
     </form>
   );
 }

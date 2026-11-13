@@ -1,8 +1,8 @@
 // Shared types for the studio kit. Server and client both import this file, so it holds no secrets and no Node APIs.
 
-/** The four ways a build can be powered. A build turns on the ones that make sense for it (studio.config.ts). */
-export type Mode = "local" | "chatgpt" | "claude" | "publik";
-export const ALL_MODES: readonly Mode[] = ["local", "chatgpt", "claude", "publik"];
+/** The ways a build can be powered. A build turns on the ones that make sense for it (studio.config.ts). */
+export type Mode = "local" | "chatgpt" | "claude" | "openai" | "publik";
+export const ALL_MODES: readonly Mode[] = ["local", "chatgpt", "claude", "openai", "publik"];
 
 /** How hard the model should work. Each provider maps it to its own knob (Claude: effort; publik: tier model). */
 export type Tier = "fast" | "balanced" | "smart";
@@ -39,6 +39,8 @@ export interface StudioConfig {
   /** Pre-selected when a person has not picked yet (must be in `modes` and available where it runs). */
   defaultMode?: Mode;
   claude?: { model?: string };
+  /** Default OpenAI model; else the newest full model the person's key can use. */
+  openai?: { model?: string };
   local?: { model?: string };
   chatgpt?: { model?: string };
 }
@@ -46,7 +48,7 @@ export interface StudioConfig {
 /** What GET /api/studio/status answers. The client draws the picker from it. */
 export interface StudioStatus {
   app: StudioConfig["app"];
-  /** true on Vercel (or STUDIO_HOSTED=1): local models and ChatGPT sign-in need the app running on the person's machine. */
+  /** true on Vercel (or STUDIO_HOSTED=1): local models need the app on the person's machine; ChatGPT plan isn't offered at all. */
   hosted: boolean;
   mode: Mode | null;
   /** The mode that would answer right now (selected, else default, else the first ready one). */
@@ -76,6 +78,7 @@ export const MODE_COPY: Record<Mode, { label: string; blurb: string }> = {
   local: { label: "Local model", blurb: "Runs on your computer with Ollama or LM Studio. Free and private." },
   chatgpt: { label: "ChatGPT plan", blurb: "Sign in with ChatGPT and use your Plus or Pro plan. No API key." },
   claude: { label: "Claude API key", blurb: "Paste your Anthropic key. It stays in an encrypted cookie on this browser." },
+  openai: { label: "OpenAI API key", blurb: "Paste your OpenAI key. It stays in an encrypted cookie on this browser." },
   publik: { label: "publik", blurb: "Sign in with publik and use your publik plan. No key needed." },
 };
 

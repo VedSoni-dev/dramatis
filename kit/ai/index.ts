@@ -1,4 +1,4 @@
-// The studio kit's server entry. Every build calls AI through here, whichever of the four modes the person picked:
+// The studio kit's server entry. Every build calls AI through here, whichever mode the person picked:
 //
 //   import { streamText } from "@/kit/ai";
 //   export async function POST(req: Request) {
@@ -12,6 +12,7 @@ import config from "@/studio.config";
 import { ALL_MODES, MODE_COPY, type AIRequest, type Mode, type ModeStatus, type StudioErrorBody, type StudioStatus } from "./types";
 import { cookieOpts, isHosted, StudioError, YEAR, type Jar } from "./seal";
 import { claudeKey, claudeStatus, claudeStream } from "./claude";
+import { openaiKey, openaiStatus, openaiStream } from "./openai";
 import { chatgptModels, chatgptStatus, chatgptStream } from "./chatgpt";
 import { localStatus, localStream } from "./local";
 import * as publik from "./publik";
@@ -25,6 +26,10 @@ const MODEL_COOKIE = (m: Mode) => `studio-${m}-model`;
 
 export const enabledModes = (): Mode[] => config.modes.filter((m) => ALL_MODES.includes(m));
 const LOCAL_ONLY: Mode[] = ["local", "chatgpt"];
+// Vedant, 2026-11-13: "get rid of sign in with chatgpt if it doesnt work in domain". OpenAI keeps ChatGPT-plan use to
+// open-source apps run locally (hosted apps: interest form; website sign-in: select partners only), so the hosted
+// picker leaves it out entirely; the OpenAI API key mode covers OpenAI there. A local run still offers it.
+const shownModes = (): Mode[] => enabledModes().filter((m) => !(isHosted() && m === "chatgpt"));
 
 export function runLocallyCommand(): string {
   return `git clone ${config.app.repo}.git && cd ${config.app.slug} && npm install && npm run dev`;
@@ -48,11 +53,12 @@ async function statusOf(m: Mode, jar: Jar, req: Request): Promise<ModeStatus> {
   const base = { id: m, ...MODE_COPY[m] };
   if (isHosted() && LOCAL_ONLY.includes(m)) {
     return { ...base, available: false, ready: false,
-      reason: m === "chatgpt" ? "OpenAI allows ChatGPT plan sign-in for apps running on your own computer. Run it locally to use your plan." : "Local models run on your own computer. Run the app locally to use one." };
+      reason: m === "chatgpt" ? "ChatGPT plan sign-in works when the app runs on your computer." : "Local models run on your own computer. Run the app locally to use one." };
   }
   try {
     switch (m) {
       case "claude": return { ...base, available: true, ...claudeStatus(jar) };
+      case "openai": return { ...base, available: true, ...(await openaiStatus(jar, readModel(jar, "openai") ?? config.openai?.model)) };
       case "local": {
         const s = await localStatus(readModel(jar, "local") ?? config.local?.model);
         return { ...base, available: true, ready: s.ready, detail: s.detail, models: s.models, model: s.model };
@@ -81,7 +87,7 @@ async function statusOf(m: Mode, jar: Jar, req: Request): Promise<ModeStatus> {
 /** Everything the mode picker needs for this browser. */
 export async function studioStatus(req: Request, jar?: Jar): Promise<StudioStatus> {
   const j = jar ?? (await cookies());
-  const modes = await Promise.all(enabledModes().map((m) => statusOf(m, j, req)));
+  const modes = await Promise.all(shownModes().map((m) => statusOf(m, j, req)));
   const mode = readMode(j);
   const active = pickActive(mode, modes);
   return { app: config.app, hosted: isHosted(), mode, active, modes, runLocally: runLocallyCommand() };
@@ -115,6 +121,12 @@ async function* answer(mode: Mode, j: Jar, ai: AIRequest, signal: AbortSignal): 
       const key = claudeKey(j);
       if (!key) throw new StudioError(401, "Add your Claude API key first.");
       yield* claudeStream(key, ai, config.claude?.model, signal);
+      return;
+    }
+    case "openai": {
+      const key = openaiKey(j);
+      if (!key) throw new StudioError(401, "Add your OpenAI API key first.");
+      yield* openaiStream(key, ai, readModel(j, "openai") ?? config.openai?.model, signal);
       return;
     }
     case "chatgpt": yield* chatgptStream(config.app.slug, ai, readModel(j, "chatgpt") ?? config.chatgpt?.model, signal); return;

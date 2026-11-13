@@ -5,6 +5,7 @@
 //   POST   /api/studio/mode        {mode}     pick a mode (null: ask again)
 //   POST   /api/studio/model       {mode, model}
 //   POST   /api/studio/claude/key  {key}      check + save the Claude key (sealed cookie); DELETE forgets it
+//   POST   /api/studio/openai/key  {key}      check + save the OpenAI key (sealed cookie); DELETE forgets it
 //   POST   /api/studio/chatgpt/start          -> {url} to open; the app polls status until signed in
 //   POST   /api/studio/chatgpt/signout
 //   POST   /api/studio/publik/provision       publik install for this browser (DELETE: forget it)
@@ -15,6 +16,7 @@ import { cookies } from "next/headers";
 import config from "@/studio.config";
 import { errorResponse, studioStatus, writeMode, writeModel, enabledModes } from "./ai";
 import { forgetClaudeKey, saveClaudeKey } from "./ai/claude";
+import { forgetOpenAIKey, saveOpenAIKey } from "./ai/openai";
 import { chatgptSignOut, startChatGPTSignIn } from "./ai/chatgpt";
 import * as publik from "./ai/publik";
 import { isHosted, StudioError } from "./ai/seal";
@@ -68,6 +70,13 @@ export async function POST(req: Request, ctx: Ctx): Promise<Response> {
         writeMode(jar, req, "claude");
         return Response.json(await studioStatus(req, jar));
       }
+      case "openai/key": {
+        if (!enabledModes().includes("openai")) throw new StudioError(400, "This app doesn't offer OpenAI keys.");
+        const { key } = await body<{ key?: string }>(req);
+        await saveOpenAIKey(jar, req, key ?? "");
+        writeMode(jar, req, "openai");
+        return Response.json(await studioStatus(req, jar));
+      }
       case "chatgpt/start": {
         if (isHosted()) throw new StudioError(409, "ChatGPT plan sign-in works when the app runs on your computer.");
         if (!enabledModes().includes("chatgpt")) throw new StudioError(400, "This app doesn't offer ChatGPT sign-in.");
@@ -113,6 +122,7 @@ export async function DELETE(req: Request, ctx: Ctx): Promise<Response> {
     const r = await route(ctx);
     const jar = await cookies();
     if (r === "claude/key") { forgetClaudeKey(jar); return Response.json(await studioStatus(req, jar)); }
+    if (r === "openai/key") { forgetOpenAIKey(jar); return Response.json(await studioStatus(req, jar)); }
     if (r === "publik/provision") { publik.forget(jar); return Response.json(await studioStatus(req, jar)); }
     return Response.json({ error: "Not found" }, { status: 404 });
   } catch (e) { return errorResponse(e); }
