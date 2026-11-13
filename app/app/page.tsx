@@ -1,5 +1,6 @@
 "use client";
 // Home at "/app": describe a new character in one line, pick up a chat, or pick someone from the cast.
+// The cast is shown by their faces: a big portrait each, the name, one line.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -35,59 +36,64 @@ export default function Home() {
   return (
     <div className="min-h-dvh">
       <AppHeader right={<span className="hidden sm:contents"><Link href="/app/new" className="sk-btn sk-btn-quiet">New character</Link></span>} />
-      <main className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-8">
-        <section className="sk-stagger pt-10 sm:pt-16">
-          <h1 className="max-w-3xl text-[2.6rem] leading-[1] sm:text-6xl">Who do you want to talk to?</h1>
-          <p className="mt-4 max-w-xl text-muted">Describe a character in one line and Dramatis writes them, or pick someone from the cast below.</p>
-          <form ref={form} className="mt-7 flex max-w-2xl flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); write(idea); }}>
+      <main className="wrap pb-28">
+        <section className="sk-stagger pt-12 sm:pt-20">
+          <h1 className="max-w-3xl text-[2.6rem] leading-[1] sm:text-[4.25rem]">Who do you want to talk to?</h1>
+          <p className="mt-5 max-w-xl text-[1.05rem] leading-relaxed text-muted sm:text-lg">Describe a character in one line and Dramatis writes them, or pick someone from the cast.</p>
+          <form ref={form} className="idea-field mt-8 max-w-3xl" onSubmit={(e) => { e.preventDefault(); write(idea); }}>
             <label className="sr-only" htmlFor="idea">Describe a character</label>
-            <input id="idea" className="fd-input flex-1" value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="A grumpy dragon who runs a bakery" autoComplete="off" maxLength={500} />
+            <input id="idea" value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="A grumpy dragon who runs a bakery" autoComplete="off" maxLength={500} />
             <button type="submit" className="sk-btn">Write my character</button>
           </form>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {IDEAS.map((t) => (
-              <button key={t} type="button" onClick={() => write(t)} className="min-h-11 rounded-full border border-line px-4 text-left text-sm text-muted transition-colors duration-150 hover:border-fg/25 hover:text-fg">{t}</button>
+              <button key={t} type="button" onClick={() => write(t)} className="min-h-11 rounded-full border border-line px-4 text-left text-sm text-muted transition-colors duration-150 hover:border-[var(--line-strong)] hover:text-fg">{t}</button>
             ))}
           </div>
         </section>
 
         {recent.length > 0 && (
-          <Group title="Pick up where you left off">
+          <Shelf title="Pick up where you left off" cols="sm:grid-cols-2 lg:grid-cols-3">
             {recent.map(({ chat, character }) => {
               const last = [...chat.messages].reverse().find((m) => m.role === "assistant");
-              return <CastCard key={character.id} c={character} line={last ? textOf(last).replace(/\*[^*]*\*/g, "").trim() : character.tagline} />;
+              return (
+                <Link key={character.id} href={`/app/chat/${encodeURIComponent(character.id)}`} className="row-card">
+                  <Portrait c={character} size={56} />
+                  <span className="min-w-0">
+                    <span className="block truncate font-medium">{character.name}</span>
+                    <span className="mt-0.5 line-clamp-2 block text-sm leading-snug text-muted">{last ? textOf(last).replace(/\*[^*]*\*/g, "").trim() : character.tagline}</span>
+                  </span>
+                </Link>
+              );
             })}
-          </Group>
+          </Shelf>
         )}
-        {mine.length > 0 && <Group title="Your characters">{mine.map((c) => <CastCard key={c.id} c={c} />)}</Group>}
-        <Group title="To play with">{CAST.filter((c) => c.group === "play").map((c) => <CastCard key={c.id} c={c} />)}</Group>
-        <Group title="To practise with">{CAST.filter((c) => c.group === "practice").map((c) => <CastCard key={c.id} c={c} />)}</Group>
+        {mine.length > 0 && <Shelf title="Your characters">{mine.map((c) => <CastCard key={c.id} c={c} />)}</Shelf>}
+        <Shelf id="cast" title="To play with">{CAST.filter((c) => c.group === "play").map((c) => <CastCard key={c.id} c={c} />)}</Shelf>
+        <Shelf title="To practise with">{CAST.filter((c) => c.group === "practice").map((c) => <CastCard key={c.id} c={c} />)}</Shelf>
       </main>
     </div>
   );
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function Shelf({ id, title, children, cols = "grid-cols-2 lg:grid-cols-4" }: { id?: string; title: string; children: React.ReactNode; cols?: string }) {
   return (
-    <section className="mt-14">
+    <section id={id} className="mt-16 scroll-mt-20 sm:mt-20">
       <h2 className="font-mono text-[.8rem] font-medium tracking-normal text-muted">{title}</h2>
-      <div className="sk-stagger mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
+      <div className={`sk-stagger mt-5 grid gap-x-4 gap-y-8 sm:gap-x-6 ${cols}`}>{children}</div>
     </section>
   );
 }
 
-function CastCard({ c, line }: { c: Character; line?: string }) {
+function CastCard({ c }: { c: Character }) {
   return (
-    <Link href={`/app/chat/${encodeURIComponent(c.id)}`} className="cast-card group flex flex-col gap-4 rounded-[var(--radius)] border border-line bg-card p-5">
-      <div className="flex items-center gap-3">
-        <Portrait c={c} size={52} />
-        <h3 className="min-w-0 text-[1.05rem] leading-tight tracking-[-0.01em]">{c.name}</h3>
+    <Link href={`/app/chat/${encodeURIComponent(c.id)}`} className="cast-card group">
+      <div className="cast-card__media"><Portrait c={c} size="fill" /></div>
+      <div className="mt-4 flex items-baseline justify-between gap-3">
+        <h3 className="min-w-0 truncate text-[1.1rem] font-medium leading-tight tracking-[-0.01em] sm:text-[1.2rem]">{c.name}</h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden className="cast-card__go flex-none text-muted"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </div>
-      <p className="line-clamp-2 text-sm leading-relaxed text-muted">{line ?? c.tagline}</p>
-      <span className="mt-auto inline-flex items-center gap-1.5 text-sm text-fg/80 transition-colors duration-150 group-hover:text-accent">
-        {line ? "Continue the chat" : "Start a chat"}
-        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden className="transition-transform duration-150 group-hover:translate-x-0.5"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      </span>
+      <p className="mt-1.5 line-clamp-2 text-[.92rem] leading-snug text-muted sm:text-[.98rem]">{c.tagline}</p>
     </Link>
   );
 }

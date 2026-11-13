@@ -33,6 +33,7 @@ No account with us. Pick what powers it, and switch any time:
 | Mode | How | Works on |
 |---|---|---|
 | **Claude API key** | Paste your Anthropic key. Stored encrypted on your browser only. | web + your computer |
+| **OpenAI API key** | Paste your OpenAI key. Stored encrypted on your browser only. | web + your computer |
 | **publik** | Sign in with publik and use your publik plan. No key. | web + your computer |
 | **ChatGPT plan** | Continue with ChatGPT and use your Plus or Pro plan. No API key. | your computer |
 | **Local model** | Ollama or LM Studio on your computer. Free, private, offline. | your computer |
@@ -70,15 +71,16 @@ out of the role for real safety issues) and streams the reply from whichever AI 
 
 | Path | What |
 |---|---|
-| `app/page.tsx` | The landing page |
+| `app/route.ts`, `lib/landing.ts` | The landing page: static HTML on the taste kit in `public/assets` (DESIGN.md) |
 | `app/app/page.tsx` | Home: write a character in one line, your chats, the cast |
 | `app/app/new/page.tsx` | Make, edit, copy or import a character (streams the draft into the form) |
 | `app/app/chat/[id]/page.tsx` | The chat: streaming replies, takes, share, start over |
 | `app/api/ai/route.ts` | The chat call and the role-play prompt |
 | `app/api/draft/route.ts` | "Write it for me": one line in, a character out |
 | `lib/cast.ts` | The eight built-in characters |
+| `lib/portraits.ts` | Every character's face, drawn in code: the cast's own, or one seeded from the name |
 | `lib/store.ts`, `lib/share.ts` | Browser storage and share links |
-| `kit/` | Shared studio kit: the four AI modes, the mode picker, theme and motion tokens |
+| `kit/` | Shared studio kit: the AI modes, the mode picker, theme and motion tokens |
 | `studio.config.ts` | Name, links and which AI modes this app offers |
 
 **Privacy.** Your Claude key is kept in an encrypted, http-only cookie on your browser and sent only to Anthropic. ChatGPT sign-in tokens stay on your computer in `~/.config/dramatis/` (owner-only). Local models never leave your machine. The app sends an anonymous usage count to [Vedant's builds hub](https://builds.vedantsoni.com) (this app's name, which AI mode answered, a random id per browser; no content, no IP, no account), and never for browsers with Do Not Track or Global Privacy Control.
