@@ -100,7 +100,7 @@
 .sk-pill:active { transform: scale(.97); }
 .sk-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
 .sk-dot.is-on { background: var(--ok); box-shadow: 0 0 0 3px color-mix(in oklab, var(--ok) 25%, transparent); }
-.sk-dialog { width: min(40rem, calc(100vw - 2rem)); max-height: min(90vh, 52rem); padding: 1.25rem; border: 1px solid var(--line); border-radius: calc(var(--radius) + 6px); background: var(--bg); color: var(--fg); box-shadow: var(--shadow-3); }
+.sk-dialog { margin: auto; /* Tailwind's reset zeroes the native centring */ width: min(40rem, calc(100vw - 2rem)); max-height: min(90vh, 52rem); padding: 1.25rem; border: 1px solid var(--line); border-radius: calc(var(--radius) + 6px); background: var(--bg); color: var(--fg); box-shadow: var(--shadow-3); }
 .sk-dialog[open] { animation: sk-rise var(--dur-3) var(--spring); }
 .sk-dialog::backdrop { background: rgb(0 0 0 / .45); backdrop-filter: blur(3px); animation: sk-fade var(--dur-2) var(--ease-out); }
 .sk-dialog-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: .75rem; }

@@ -1,5 +1,6 @@
 {
   "publikSlug": "deckhand",
-  "hubUrl": "https://builds.vedantsoni.com",
-  "hubRepo": "https://github.com/VedSoni-dev/deckhand"
+  "hubUrl": "https://deckhand-dusky.vercel.app",
+  "hubRepo": "https://github.com/VedSoni-dev/deckhand",
+  "plannedUrl": "https://builds.vedantsoni.com"
 }

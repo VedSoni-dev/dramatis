@@ -93,7 +93,11 @@ export async function POST(req: Request, ctx: Ctx): Promise<Response> {
       case "ping": {
         const { event } = await body<{ event: "app_opened" | "active_session" }>(req);
         if (event !== "app_opened" && event !== "active_session") throw new StudioError(400, "Unknown event.");
-        const signedIn = enabledModes().includes("publik") && publik.readCredential(jar) !== null;
+        // "Signed in with publik" means the gate got past sign-in (claimed), not merely that an install exists.
+        let signedIn = false;
+        if (enabledModes().includes("publik") && publik.readCredential(jar)) {
+          try { const g = await publik.gateStatus(jar, req, { provision: false }); signedIn = g.state === "ready" || g.state === "choose"; } catch { /* publik down: not counted as signed in */ }
+        }
         beacon(jar, req, event, { publik: signedIn });
         const usage = signedIn ? await publik.sendUsage(jar, req, event) : { sent: false, reason: "no_install" };
         return Response.json({ ok: true, publik: usage });

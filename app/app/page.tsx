@@ -1,63 +1,93 @@
 "use client";
-// The app at "/app". Starter: a streaming chat over the kit. Replace the body with the build; keep the header
-// (name left, mode pill right: Jakob's law) and <ModeGate> (nobody hits a dead AI call without a mode).
+// Home at "/app": describe a new character in one line, pick up a chat, or pick someone from the cast.
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { ModeButton, ModeGate } from "@/kit/react/ModePanel";
-import { useAI } from "@/kit/react/studio";
-import type { ChatMessage } from "@/kit/ai/types";
+import { AppHeader } from "@/components/AppHeader";
+import { Portrait } from "@/components/Portrait";
+import { shake } from "@/kit/ui/motion";
+import { CAST } from "@/lib/cast";
+import { recentChats, useStore } from "@/lib/store";
+import { textOf, type Character } from "@/lib/types";
 
-export default function AppPage() {
+const IDEAS = [
+  "a retired lighthouse keeper who writes terrible poetry",
+  "a medieval knight who just discovered smartphones",
+  "my future self, ten years from now",
+];
+
+export default function Home() {
+  const s = useStore();
+  const router = useRouter();
+  const [idea, setIdea] = useState("");
+  const form = useRef<HTMLFormElement>(null);
+
+  function write(text: string) {
+    const t = text.replace(/\s+/g, " ").trim();
+    if (t.length < 3) { if (form.current) shake(form.current); return; }
+    try { sessionStorage.setItem("dramatis.idea", t); } catch { /* private mode: the form opens empty */ }
+    router.push("/app/new?draft=1");
+  }
+
+  const recent = s ? recentChats(s).slice(0, 3) : [];
+  const mine = s?.characters ?? [];
+
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="flex items-center justify-between border-b border-line px-4 py-2 sm:px-6">
-        <Link href="/" className="flex min-h-11 items-center font-display font-semibold">Dramatis</Link>
-        <ModeButton />
-      </header>
-      <main className="flex flex-1 flex-col">
-        <ModeGate><Chat /></ModeGate>
+    <div className="min-h-dvh">
+      <AppHeader right={<span className="hidden sm:contents"><Link href="/app/new" className="sk-btn sk-btn-quiet">New character</Link></span>} />
+      <main className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-8">
+        <section className="sk-stagger pt-10 sm:pt-16">
+          <h1 className="max-w-3xl text-[2.6rem] leading-[1] sm:text-6xl">Who do you want to talk to?</h1>
+          <p className="mt-4 max-w-xl text-muted">Describe a character in one line and Dramatis writes them, or pick someone from the cast below.</p>
+          <form ref={form} className="mt-7 flex max-w-2xl flex-col gap-2 sm:flex-row" onSubmit={(e) => { e.preventDefault(); write(idea); }}>
+            <label className="sr-only" htmlFor="idea">Describe a character</label>
+            <input id="idea" className="fd-input flex-1" value={idea} onChange={(e) => setIdea(e.target.value)} placeholder="A grumpy dragon who runs a bakery" autoComplete="off" maxLength={500} />
+            <button type="submit" className="sk-btn">Write my character</button>
+          </form>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {IDEAS.map((t) => (
+              <button key={t} type="button" onClick={() => write(t)} className="min-h-11 rounded-full border border-line px-4 text-left text-sm text-muted transition-colors duration-150 hover:border-fg/25 hover:text-fg">{t}</button>
+            ))}
+          </div>
+        </section>
+
+        {recent.length > 0 && (
+          <Group title="Pick up where you left off">
+            {recent.map(({ chat, character }) => {
+              const last = [...chat.messages].reverse().find((m) => m.role === "assistant");
+              return <CastCard key={character.id} c={character} line={last ? textOf(last).replace(/\*[^*]*\*/g, "").trim() : character.tagline} />;
+            })}
+          </Group>
+        )}
+        {mine.length > 0 && <Group title="Your characters">{mine.map((c) => <CastCard key={c.id} c={c} />)}</Group>}
+        <Group title="To play with">{CAST.filter((c) => c.group === "play").map((c) => <CastCard key={c.id} c={c} />)}</Group>
+        <Group title="To practise with">{CAST.filter((c) => c.group === "practice").map((c) => <CastCard key={c.id} c={c} />)}</Group>
       </main>
     </div>
   );
 }
 
-function Chat() {
-  const ai = useAI();
-  const [history, setHistory] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState("");
-  const inputRef = useRef<HTMLTextAreaElement>(null);
-
-  async function send() {
-    const text = input.trim(); // Postel: accept messy input, send it clean
-    if (!text || ai.busy) return;
-    const next: ChatMessage[] = [...history, { role: "user", content: text }];
-    setHistory(next);
-    setInput("");
-    const answer = await ai.run({ messages: next });
-    if (answer) setHistory([...next, { role: "assistant", content: answer }]);
-    inputRef.current?.focus();
-  }
-
-  const shown = ai.busy ? [...history, { role: "assistant" as const, content: ai.text }] : history;
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 sm:px-6">
-      <div className="flex-1 space-y-4 py-6">
-        {shown.length === 0 && <p className="text-muted">Ask anything to try it.</p>}
-        {shown.map((m, i) => (
-          <div key={i} className={`sk-rise max-w-[85%] whitespace-pre-wrap rounded-[var(--radius)] px-4 py-3 ${m.role === "user" ? "ml-auto bg-fg text-bg" : "border border-line bg-card"}`}>
-            {m.content || <span className="text-muted">Thinking…</span>}
-          </div>
-        ))}
-        {ai.error && (
-          <p className="sk-error" role="alert">{ai.error.message}{ai.error.action && <> <a href={ai.error.action.url} target="_blank" rel="noopener noreferrer">{ai.error.action.label} ↗</a></>}</p>
-        )}
+    <section className="mt-14">
+      <h2 className="font-mono text-[.8rem] font-medium tracking-normal text-muted">{title}</h2>
+      <div className="sk-stagger mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">{children}</div>
+    </section>
+  );
+}
+
+function CastCard({ c, line }: { c: Character; line?: string }) {
+  return (
+    <Link href={`/app/chat/${encodeURIComponent(c.id)}`} className="cast-card group flex flex-col gap-4 rounded-[var(--radius)] border border-line bg-card p-5">
+      <div className="flex items-center gap-3">
+        <Portrait c={c} size={52} />
+        <h3 className="min-w-0 text-[1.05rem] leading-tight tracking-[-0.01em]">{c.name}</h3>
       </div>
-      <form className="sticky bottom-0 flex items-end gap-2 bg-bg pb-4 pt-2" onSubmit={(e) => { e.preventDefault(); void send(); }}>
-        <textarea ref={inputRef} value={input} onChange={(e) => setInput(e.target.value)} rows={1} placeholder="Message Dramatis…"
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-          className="min-h-11 flex-1 resize-none rounded-[var(--radius-sm)] border border-line bg-card px-4 py-3 outline-none focus:border-accent focus:shadow-[var(--focus)]" />
-        {ai.busy ? <button type="button" className="sk-btn sk-btn-quiet" onClick={ai.stop}>Stop</button> : <button type="submit" className="sk-btn" disabled={!input.trim()}>Send</button>}
-      </form>
-    </div>
+      <p className="line-clamp-2 text-sm leading-relaxed text-muted">{line ?? c.tagline}</p>
+      <span className="mt-auto inline-flex items-center gap-1.5 text-sm text-fg/80 transition-colors duration-150 group-hover:text-accent">
+        {line ? "Continue the chat" : "Start a chat"}
+        <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden className="transition-transform duration-150 group-hover:translate-x-0.5"><path d="M5 12h14M13 6l6 6-6 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+      </span>
+    </Link>
   );
 }

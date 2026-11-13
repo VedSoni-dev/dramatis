@@ -96,8 +96,9 @@ function pickActive(mode: Mode | null, modes: ModeStatus[]): Mode | null {
 export async function* generate(req: Request, ai: AIRequest, jar?: Jar): AsyncGenerator<string> {
   const j = jar ?? (await cookies());
   const signal = req.signal;
-  const chosen = readMode(j) ?? config.defaultMode ?? null;
-  const mode = chosen ?? (await studioStatus(req, j)).active;
+  // Same answer as the pill: the picked mode, else the one status calls active (the default only when it's ready),
+  // else the default so its own "add your key" message shows.
+  const mode = readMode(j) ?? (await studioStatus(req, j)).active ?? config.defaultMode ?? null;
   if (!mode) throw new StudioError(401, "Pick how to power the AI first.", undefined);
   if (isHosted() && LOCAL_ONLY.includes(mode)) throw new StudioError(409, `${MODE_COPY[mode].label} works when the app runs on your computer.`);
   // Count the answer with the hub only once it actually starts (a missing key or a 402 isn't an answer).
