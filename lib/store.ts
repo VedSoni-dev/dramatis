@@ -2,11 +2,11 @@
 // Everything a person makes lives in this browser (localStorage): their characters and their chats. No accounts.
 import { useSyncExternalStore } from "react";
 import { CAST } from "./cast";
-import type { Character, Chat, Message } from "./types";
+import type { Character, Chat, Group, Message } from "./types";
 
 const KEY = "dramatis.v1";
-export interface State { characters: Character[]; chats: Record<string, Chat> }
-const EMPTY: State = { characters: [], chats: {} };
+export interface State { characters: Character[]; chats: Record<string, Chat>; groups: Group[] }
+const EMPTY: State = { characters: [], chats: {}, groups: [] };
 
 let state: State = EMPTY;
 let loaded = false;
@@ -18,7 +18,7 @@ function read(): State {
     const raw = localStorage.getItem(KEY);
     if (!raw) return EMPTY;
     const s = JSON.parse(raw) as Partial<State>;
-    return { characters: Array.isArray(s.characters) ? s.characters : [], chats: s.chats && typeof s.chats === "object" ? s.chats : {} };
+    return { characters: Array.isArray(s.characters) ? s.characters : [], chats: s.chats && typeof s.chats === "object" ? s.chats : {}, groups: Array.isArray(s.groups) ? s.groups : [] };
   } catch { return EMPTY; }
 }
 function ensure() {
@@ -59,7 +59,9 @@ export function deleteCharacter(id: string): void {
   ensure();
   const chats = { ...state.chats };
   delete chats[id];
-  commit({ characters: state.characters.filter((c) => c.id !== id), chats });
+  // they leave every group chat they were in
+  const groups = state.groups.map((g) => ({ ...g, memberIds: g.memberIds.filter((m) => m !== id) }));
+  commit({ characters: state.characters.filter((c) => c.id !== id), chats, groups });
 }
 
 const greetingMessage = (c: Character): Message => ({ id: uid(), role: "assistant", takes: [c.greeting || `Hello. I'm ${c.name}.`], take: 0 });
@@ -86,4 +88,30 @@ export function recentChats(s: State): { chat: Chat; character: Character }[] {
     .sort((a, b) => b.updatedAt - a.updatedAt)
     .map((chat) => ({ chat, character: findCharacter(s, chat.characterId) }))
     .filter((x): x is { chat: Chat; character: Character } => !!x.character);
+}
+
+/* ---------------- group chats ---------------- */
+export const groupKey = (id: string) => `group:${id}`;
+export const findGroup = (s: State, id: string) => s.groups.find((g) => g.id === id);
+/** The members who still exist (a deleted character drops out). */
+export const membersOf = (s: State, g: Group) => g.memberIds.map((id) => findCharacter(s, id)).filter((c): c is Character => !!c);
+export const groupChatFor = (s: State, g: Group): Chat => s.chats[groupKey(g.id)] ?? { characterId: groupKey(g.id), messages: [], updatedAt: 0 };
+/** "Odile, Brick and Theo" */
+export const listNames = (names: string[]) => (names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`);
+
+export function saveGroup(g: Group): boolean {
+  ensure();
+  return commit({ ...state, groups: [g, ...state.groups.filter((x) => x.id !== g.id)] });
+}
+export function deleteGroup(id: string): void {
+  ensure();
+  const chats = { ...state.chats };
+  delete chats[groupKey(id)];
+  commit({ ...state, groups: state.groups.filter((g) => g.id !== id), chats });
+}
+/** Group chats, most recently used first. */
+export function recentGroups(s: State): { group: Group; chat: Chat; members: Character[] }[] {
+  return s.groups
+    .map((group) => ({ group, chat: groupChatFor(s, group), members: membersOf(s, group) }))
+    .sort((a, b) => (b.chat.updatedAt || b.group.createdAt) - (a.chat.updatedAt || a.group.createdAt));
 }

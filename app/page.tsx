@@ -70,7 +70,7 @@ export default function Landing() {
         <section id="cast" className={`${screen} scroll-mt-16`}>
           <div className="wrap">
             <h2 className="max-w-2xl text-4xl leading-[1.05] sm:text-5xl">Eight characters ready to talk</h2>
-            <p className="mt-4 max-w-xl text-muted">Four to play with and four to practise with: Spanish over coffee, a mock interview, a pitch to a tough investor.</p>
+            <p className="mt-4 max-w-xl text-muted">Four to play with and four to practise with. Talk to one, or put up to four in a group chat where they all answer.</p>
             <div className="mt-8 grid grid-cols-2 gap-3 sm:mt-10 lg:grid-cols-4">
               {CAST.map((c) => (
                 <Link key={c.id} href={`/app/chat/${c.id}`} className="cast-card flex flex-col items-start gap-3 rounded-[var(--radius)] border border-line bg-card p-4 sm:flex-row">

@@ -1,13 +1,14 @@
 "use client";
-// Home at "/app": describe a new character in one line, pick up a chat, or pick someone from the cast.
+// Home at "/app": describe a new character in one line, pick up a chat, start a group chat, or pick from the cast.
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { AppHeader } from "@/components/AppHeader";
+import { Cluster } from "@/components/Cluster";
 import { Portrait } from "@/components/Portrait";
 import { shake } from "@/kit/ui/motion";
 import { CAST } from "@/lib/cast";
-import { recentChats, useStore } from "@/lib/store";
+import { listNames, recentChats, recentGroups, useStore } from "@/lib/store";
 import { textOf, type Character } from "@/lib/types";
 
 const IDEAS = [
@@ -31,6 +32,7 @@ export default function Home() {
 
   const recent = s ? recentChats(s).slice(0, 3) : [];
   const mine = s?.characters ?? [];
+  const groups = s ? recentGroups(s).filter((x) => x.members.length >= 2).slice(0, 3) : [];
 
   return (
     <div className="min-h-dvh">
@@ -52,22 +54,43 @@ export default function Home() {
         </section>
 
         {recent.length > 0 && (
-          <Group title="Pick up where you left off">
+          <Shelf title="Pick up where you left off">
             {recent.map(({ chat, character }) => {
               const last = [...chat.messages].reverse().find((m) => m.role === "assistant");
               return <CastCard key={character.id} c={character} line={last ? textOf(last).replace(/\*[^*]*\*/g, "").trim() : character.tagline} />;
             })}
-          </Group>
+          </Shelf>
         )}
-        {mine.length > 0 && <Group title="Your characters">{mine.map((c) => <CastCard key={c.id} c={c} />)}</Group>}
-        <Group title="To play with">{CAST.filter((c) => c.group === "play").map((c) => <CastCard key={c.id} c={c} />)}</Group>
-        <Group title="To practise with">{CAST.filter((c) => c.group === "practice").map((c) => <CastCard key={c.id} c={c} />)}</Group>
+        <Shelf title="Group chats">
+          <Link href="/app/group/new" className="cast-card group flex flex-col justify-between gap-4 rounded-[var(--radius)] border border-dashed border-line bg-transparent p-5">
+            <Cluster members={CAST.filter((c) => ["odile", "brick", "ines-calder"].includes(c.id))} size={40} />
+            <span>
+              <span className="block text-[1.05rem] leading-tight">Start a group chat</span>
+              <span className="mt-1 block text-sm leading-relaxed text-muted">Two to four characters who hear each other.</span>
+            </span>
+          </Link>
+          {groups.map(({ group, chat, members }) => {
+            const last = [...chat.messages].reverse().find((m) => m.role === "assistant");
+            return (
+              <Link key={group.id} href={`/app/group/${encodeURIComponent(group.id)}`} className="cast-card group flex flex-col gap-4 rounded-[var(--radius)] border border-line bg-card p-5">
+                <Cluster members={members} size={40} />
+                <span className="min-w-0">
+                  <span className="block truncate text-[1.05rem] leading-tight">{group.name}</span>
+                  <span className="mt-1 line-clamp-2 block text-sm leading-relaxed text-muted">{last ? textOf(last).replace(/\*[^*]*\*/g, "").trim() : listNames(members.map((c) => c.name))}</span>
+                </span>
+              </Link>
+            );
+          })}
+        </Shelf>
+        {mine.length > 0 && <Shelf title="Your characters">{mine.map((c) => <CastCard key={c.id} c={c} />)}</Shelf>}
+        <Shelf title="To play with">{CAST.filter((c) => c.group === "play").map((c) => <CastCard key={c.id} c={c} />)}</Shelf>
+        <Shelf title="To practise with">{CAST.filter((c) => c.group === "practice").map((c) => <CastCard key={c.id} c={c} />)}</Shelf>
       </main>
     </div>
   );
 }
 
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
+function Shelf({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="mt-14">
       <h2 className="font-mono text-[.8rem] font-medium tracking-normal text-muted">{title}</h2>

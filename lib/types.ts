@@ -26,13 +26,25 @@ export interface Message {
   /** Assistant messages keep every take; `take` is the one shown. User messages have one. */
   takes: string[];
   take: number;
+  /** Group chats: which character said it (assistant messages only). */
+  speakerId?: string;
 }
 
 export interface Chat {
+  /** The character's id for a one-to-one chat; "group:<id>" for a group chat. */
   characterId: string;
   messages: Message[];
   updatedAt: number;
 }
+
+/** A group chat: two to four characters who all hear each other. */
+export interface Group {
+  id: string;
+  name: string;
+  memberIds: string[];
+  createdAt: number;
+}
+export const GROUP_MIN = 2, GROUP_MAX = 4;   // Hick's law: four voices at most
 
 export const LIMITS = { name: 60, tagline: 140, greeting: 1200, persona: 4000 } as const;
 

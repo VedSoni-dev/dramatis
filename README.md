@@ -23,6 +23,7 @@ A free, open-source alternative to [Character.AI](https://character.ai) (not aff
 - **Talk to a cast of eight characters** right away: a Victorian ghost in a laundromat, a judgemental cat, a noir detective, a cargo-ship captain, and four to practise with (Spanish over coffee, a mock job interview, a skeptical investor, a tutor who only asks questions).
 - **Describe a new character in one line** ("a retired lighthouse keeper who writes terrible poetry") and watch Dramatis write their name, voice and first message into the form. Edit anything and add a picture.
 - **Ask for another take** on any reply and flip between takes.
+- **Start a group chat** with two to four characters. They all answer when you speak, they hear each other, and "Keep going" lets them talk on without you.
 - **Share a character with a link.** The whole character travels in the link itself, so nothing is stored on a server.
 - **Keep everything in your browser.** No account: characters and chats are saved on your device.
 
@@ -74,6 +75,8 @@ out of the role for real safety issues) and streams the reply from whichever AI 
 | `app/app/page.tsx` | Home: write a character in one line, your chats, the cast |
 | `app/app/new/page.tsx` | Make, edit, copy or import a character (streams the draft into the form) |
 | `app/app/chat/[id]/page.tsx` | The chat: streaming replies, takes, share, start over |
+| `app/app/group/` | Group chats: pick 2–4 characters, then everyone answers in turn |
+| `app/api/group/route.ts` | One member's next line, hearing everyone else |
 | `app/api/ai/route.ts` | The chat call and the role-play prompt |
 | `app/api/draft/route.ts` | "Write it for me": one line in, a character out |
 | `lib/cast.ts` | The eight built-in characters |

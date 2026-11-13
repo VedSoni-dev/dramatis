@@ -21,8 +21,9 @@
 html { background: var(--bg); color: var(--fg); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
 body { margin: 0; font-family: var(--font-body); min-height: 100dvh; }
 ::selection { background: color-mix(in oklab, var(--accent) 35%, transparent); }
-h1, h2, h3 { font-family: var(--font-display); letter-spacing: var(--tracking-display); text-wrap: balance; }
-p { text-wrap: pretty; }
+/* text-wrap-style only: the text-wrap shorthand would also set the wrap mode and beat Tailwind's `truncate` */
+h1, h2, h3 { font-family: var(--font-display); letter-spacing: var(--tracking-display); text-wrap-style: balance; }
+p { text-wrap-style: pretty; }
 
 /* ---------- Dramatis: the glass theme re-toned to the taste deal (lunar-grey-bronze, schibsted). DESIGN.md ---------- */
 :root {
